@@ -103,7 +103,7 @@ func TestBuildahBuild(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			buildArgs := []string{"build", "--buildah", "--buildah-options", "--format=docker"}
+			buildArgs := []string{"build", "--buildah"}
 			output, err := cmdtest.RunAppsody(sandbox, buildArgs...)
 			if err != nil {
 				t.Fatalf("Test failed unexpectedly when dryrun value: %v with error: %v", config.Dryrun, err)
