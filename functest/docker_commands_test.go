@@ -16,10 +16,13 @@ package functest
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	cmd "github.com/appsody/appsody/cmd"
+	"github.com/appsody/appsody/cmd/cmdtest"
 )
 
 var invalidDockerCmdsTest = []struct {
@@ -50,6 +53,54 @@ func TestDockerInspect(t *testing.T) {
 				t.Error("Expected an error from '", test.file, "' name but it did not return one.")
 			} else if !strings.Contains(out, test.expected) {
 				t.Error("Expected the stdout to contain '" + test.expected + "'. It actually contains: " + out)
+			}
+		})
+	}
+}
+
+var buildahBuild = []struct {
+	config   *cmd.RootCommandConfig
+	expected string
+}{
+	{&cmd.RootCommandConfig{Dryrun: false}, "[Buildah] Writing manifest to image destination"},
+	{&cmd.RootCommandConfig{Dryrun: true}, "Dryrun complete"},
+}
+
+func TestBuildahBuild(t *testing.T) {
+
+	for _, testData := range buildahBuild {
+		// need to set testData to a new variable scoped under the for loop
+		// otherwise tests run in parallel may get the wrong testData
+		// because the for loop reassigns it before the func runs
+		test := testData
+
+		config := test.config
+
+		t.Run(fmt.Sprintf("Test Buildah Build"), func(t *testing.T) {
+			if runtime.GOOS != "linux" {
+				t.Skip()
+			}
+
+			sandbox, cleanup := cmdtest.TestSetupWithSandbox(t, true)
+			defer cleanup()
+
+			var outBuffer bytes.Buffer
+			log := &cmd.LoggingConfig{}
+			log.InitLogging(&outBuffer, &outBuffer)
+
+			// Because the 'starter' folder has been copied, the stack.yaml file will be in the 'starter'
+			// folder within the temp directory that has been generated for sandboxing purposes, rather than
+			// the usual core temp directory
+			sandbox.ProjectDir = filepath.Join(sandbox.TestDataPath, "starter")
+
+			args := []string{"build", "--buildah", "--buildah-options", "--format=docker"}
+			output, err := cmdtest.RunAppsody(sandbox, args...)
+			if err != nil {
+				t.Fatalf("Test failed unexpectedly when dryrun value: %v with error: %v", config.Dryrun, err)
+			} else {
+				if !strings.Contains(output, test.expected) {
+					t.Error("String ", test.expected, " not found in output")
+				}
 			}
 		})
 	}
