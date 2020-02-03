@@ -16,6 +16,7 @@ package functest
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -88,13 +89,22 @@ func TestBuildahBuild(t *testing.T) {
 			log := &cmd.LoggingConfig{}
 			log.InitLogging(&outBuffer, &outBuffer)
 
-			// Because the 'starter' folder has been copied, the stack.yaml file will be in the 'starter'
-			// folder within the temp directory that has been generated for sandboxing purposes, rather than
-			// the usual core temp directory
-			sandbox.ProjectDir = filepath.Join(sandbox.TestDataPath, "starter")
+			testDir := filepath.Join(sandbox.ProjectDir, "starter")
+			err := os.Mkdir(testDir, os.FileMode(0755))
+			if err != nil {
+				t.Errorf("Error creating directory: %v", err)
+			}
+			sandbox.ProjectDir = filepath.Join(sandbox.ProjectDir, "starter")
 
-			args := []string{"build", "--buildah", "--buildah-options", "--format=docker"}
-			output, err := cmdtest.RunAppsody(sandbox, args...)
+			args := []string{"init", "incubator/starter"}
+
+			_, err = cmdtest.RunAppsody(sandbox, args...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			buildArgs := []string{"build", "--buildah", "--buildah-options", "--format=docker"}
+			output, err := cmdtest.RunAppsody(sandbox, buildArgs...)
 			if err != nil {
 				t.Fatalf("Test failed unexpectedly when dryrun value: %v with error: %v", config.Dryrun, err)
 			} else {
