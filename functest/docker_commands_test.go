@@ -16,14 +16,10 @@ package functest
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	cmd "github.com/appsody/appsody/cmd"
-	"github.com/appsody/appsody/cmd/cmdtest"
 )
 
 var invalidDockerCmdsTest = []struct {
@@ -59,6 +55,11 @@ func TestDockerInspect(t *testing.T) {
 	}
 }
 
+func TestDockerCommandArgFail(t *testing.T) {
+
+}
+
+/*
 var buildahBuild = []struct {
 	config   *cmd.RootCommandConfig
 	expected string
@@ -115,3 +116,4 @@ func TestBuildahBuild(t *testing.T) {
 		})
 	}
 }
+*/
