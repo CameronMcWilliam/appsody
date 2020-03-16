@@ -21,6 +21,11 @@ func DockerBuild(config *RootCommandConfig, args []string, logger appsodylogger)
 	buildArgs = append(buildArgs, args...)
 	return RunDockerCommandAndWait(config, buildArgs, logger)
 }
+func DockerBuildx(config *RootCommandConfig, args []string, logger appsodylogger) error {
+	var buildArgs = []string{"buildx", "build"}
+	buildArgs = append(buildArgs, args...)
+	return RunDockerCommandAndWait(config, buildArgs, logger)
+}
 func BuildahBuild(config *RootCommandConfig, args []string, logger appsodylogger) error {
 	var buildArgs = []string{"bud"}
 	buildArgs = append(buildArgs, args...)

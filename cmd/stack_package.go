@@ -47,6 +47,7 @@ type StackYaml struct {
 	DefaultTemplate string            `yaml:"default-template"`
 	TemplatingData  map[string]string `yaml:"templating-data"`
 	Requirements    StackRequirement  `yaml:"requirements,omitempty"`
+	Architectures   string            `yaml:"architectures,omitempty"`
 }
 type Maintainer struct {
 	Name     string `yaml:"name"`
@@ -73,6 +74,7 @@ type IndexYamlStack struct {
 	Templates       []IndexYamlStackTemplate
 	Requirements    StackRequirement `yaml:"requirements,omitempty"`
 	Image           string           `yaml:"image"`
+	Architectures   string           `yaml:"architectures,omitempty"`
 }
 type IndexYamlStackTemplate struct {
 	ID        string `yaml:"id"`
@@ -301,9 +303,14 @@ The packaging process builds the stack image, generates the "tar.gz" archive fil
 			cmdArgs = append(cmdArgs, "-f", dockerFile, imageDir)
 			log.Debug.Log("cmdArgs is: ", cmdArgs)
 
-			if !config.Buildah {
+			if !config.Buildah && stackYaml.Architectures == "" {
 				log.Info.Log("Running docker build")
 				err = DockerBuild(config.RootCommandConfig, cmdArgs, config.DockerLog)
+			} else if !config.Buildah && stackYaml.Architectures != "" {
+				log.Info.Log("Running docker buildx")
+				platformArgs := "--platform=" + stackYaml.Architectures
+				cmdArgs = append(cmdArgs, platformArgs)
+				DockerBuildx(config.RootCommandConfig, cmdArgs, config.DockerLog)
 			} else {
 				log.Info.Log("Running buildah build")
 				err = BuildahBuild(config.RootCommandConfig, cmdArgs, config.BuildahLog)
@@ -508,6 +515,7 @@ func initialiseStackData(stackID string, stackImage string, stackYaml StackYaml)
 	newStackStruct.DefaultTemplate = stackYaml.DefaultTemplate
 	newStackStruct.Requirements = stackYaml.Requirements
 	newStackStruct.Image = stackImage
+	newStackStruct.Architectures = stackYaml.Architectures
 
 	return newStackStruct
 }
