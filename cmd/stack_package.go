@@ -310,7 +310,7 @@ The packaging process builds the stack image, generates the "tar.gz" archive fil
 				log.Info.Log("Running docker buildx")
 				platformArgs := "--platform=" + stackYaml.Architectures
 				cmdArgs = append(cmdArgs, platformArgs)
-				DockerBuildx(config.RootCommandConfig, cmdArgs, config.DockerLog)
+				err = DockerBuildx(config.RootCommandConfig, cmdArgs, config.DockerLog)
 			} else {
 				log.Info.Log("Running buildah build")
 				err = BuildahBuild(config.RootCommandConfig, cmdArgs, config.BuildahLog)

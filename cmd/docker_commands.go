@@ -6,6 +6,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
+
+	"github.com/pkg/errors"
 )
 
 //DockerRunAndListen runs a Docker command with arguments in args
@@ -22,8 +26,30 @@ func DockerBuild(config *RootCommandConfig, args []string, logger appsodylogger)
 	return RunDockerCommandAndWait(config, buildArgs, logger)
 }
 func DockerBuildx(config *RootCommandConfig, args []string, logger appsodylogger) error {
+	config.Info.Log("Checking docker version meets minimum requriements")
+	var versionArgs = []string{"version", "--format", "{{.Server.Version}}"}
+	versionString, err := RunDockerCmdExec(versionArgs)
+	if err != nil {
+		return err
+	}
+	config.Info.Log("Checking docker experimental daemon is enabled")
+	version := strings.Split(versionString, ".")
+	majorVersion, err := strconv.Atoi(version[0])
+	minorVersion, err := strconv.Atoi(version[1])
+	if (majorVersion == 19 && minorVersion < 03) || majorVersion < 19 {
+		return errors.Errorf("Minimum Docker version 19.03 needed for buildx features")
+	}
+	var experimentalArgs = []string{"version", "-f", "{{.Server.Experimental}}"}
+	experimentalEnv, err := RunDockerCmdExec(experimentalArgs)
+	if err != nil {
+		return err
+	}
+	if experimentalEnv == "false" {
+		return errors.New("Enable experimental docker daemon to continue")
+	}
 	var buildArgs = []string{"buildx", "build"}
 	buildArgs = append(buildArgs, args...)
+	buildArgs = append(buildArgs, "--push")
 	return RunDockerCommandAndWait(config, buildArgs, logger)
 }
 func BuildahBuild(config *RootCommandConfig, args []string, logger appsodylogger) error {
